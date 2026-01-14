@@ -1,13 +1,20 @@
 const express = require('express');
+const path = require('path');
 const session = require('express-session');
 const authRoutes = require('./routes/authRoutes');
+const homeRoutes = require('./routes/homeRoutes');
 const { SESSION_SECRET } = require('./config/env');
 
 const app = express();
 
+// Setup view engine (EJS)
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure sessions
 app.use(session({
@@ -23,33 +30,7 @@ app.use(session({
 }));
 
 // Routes
-app.use('/', authRoutes);
-
-// Home page
-app.get('/', (req, res) => {
-  if (req.session.user) {
-    // Log user object for debugging image issues
-    console.log('Session user:', req.session.user);
-    const pic = req.session.user.picture || '';
-    res.send(`
-      <h1>Welcome ${req.session.user.name}!</h1>
-      <img src="${pic}" alt="profile" style="width: 100px; border-radius: 50%;">
-      <p>Email: ${req.session.user.email}</p>
-      <a href="/logout">Logout</a>
-    `);
-  } else {
-    res.send('<a href="/auth/google">Login with Google</a>');
-  }
-});
-
-// Login page
-app.get('/login', (req, res) => {
-  const error = req.query.error ? `<p style="color: red;">Error: ${req.query.error}</p>` : '';
-  res.send(`
-    <h1>Login</h1>
-    ${error}
-    <a href="/auth/google">Login with Google</a>
-  `);
-});
+app.use('/', homeRoutes);  // Public pages (/, /login)
+app.use('/', authRoutes);  // Auth routes (/auth/*, /profile, /logout)
 
 module.exports = app;

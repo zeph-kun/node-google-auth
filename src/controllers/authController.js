@@ -50,12 +50,10 @@ const handleGoogleCallback = async (req, res) => {
 
     // Upsert user in database (create if not exists)
     try {
-      console.log('🔍 Searching for user with email:', profile.email);
       const existing = await User.findOne({ email: profile.email });
       
       if (existing) {
         // Update fields if necessary
-        console.log('✏️ User exists, updating...');
         existing.name = profile.name || existing.name;
         existing.picture = profile.picture || existing.picture;
         existing.googleId = profile.id || existing.googleId;
@@ -66,9 +64,7 @@ const handleGoogleCallback = async (req, res) => {
           name: existing.name,
           picture: existing.picture,
         };
-        console.log('✅ Existing user signed in:', existing.email);
       } else {
-        console.log('➕ Creating new user...');
         const created = await User.create({
           googleId: profile.id,
           email: profile.email,
@@ -81,11 +77,10 @@ const handleGoogleCallback = async (req, res) => {
           name: created.name,
           picture: created.picture,
         };
-        console.log('✅ New user created:', created.email);
       }
       return res.redirect('/');
     } catch (dbErr) {
-      console.error('❌ DB error:', dbErr.message || dbErr);
+      console.error('DB error:', dbErr.message || dbErr);
       console.error('Full DB error:', dbErr);
       return res.status(500).redirect('/login?error=db_error: ' + encodeURIComponent(dbErr.message));
     }
@@ -117,7 +112,9 @@ const logout = (req, res) => {
 
 // Get user profile
 const getProfile = (req, res) => {
-  res.json({ user: req.session.user });
+  res.render('profile', {
+    user: req.session.user,
+  });
 };
 
 module.exports = {
