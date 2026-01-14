@@ -2,6 +2,44 @@
 
 Une application Express.js pour l'authentification avec Google OAuth2 et persistance utilisateur dans MongoDB.
 
+```mermaid
+sequenceDiagram
+    participant Browser as Navigateur
+    participant App as Node.js App
+    participant Google as Google OAuth
+    participant GoogleAPI as Google API
+
+    Browser->>App: GET /login
+    App->>App: Génère state (crypto.randomBytes)
+    App->>App: Stocke state en session
+    App->>Browser: Génère URL auth Google + state<br/>Redirect vers Google
+
+    Browser->>Google: GET /o/oauth2/v2/auth<br/>?client_id, redirect_uri, code, scope, state
+
+    alt Utilisateur s'authentifie
+        Google->>Browser: Redirect vers callback<br/>avec code & state
+    end
+
+    Browser->>App: GET /auth/google/callback<br/>?code=...&state=...
+
+    App->>App: Vérifie state vs session
+    App->>App: Efface state de session
+    alt State invalide
+        App->>Browser: Redirect /login?error=invalid_state
+    else State valide
+        App->>Google: POST /oauth2.googleapis.com/token<br/>code, client_id, client_secret, grant_type=authorization_code
+        Google->>App: access_token
+
+        App->>GoogleAPI: GET /oauth2/v1/userinfo<br/>Authorization: Bearer access_token
+        GoogleAPI->>App: profile {id, email, name, picture}
+
+        Note over App: Ignore DB - session seulement
+        App->>App: Met à jour session.user<br/>{id, email, name, picture}
+        App->>Browser: Redirect /
+    end
+
+```
+
 ## Structure du projet
 
 ```
