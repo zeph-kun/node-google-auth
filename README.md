@@ -6,6 +6,7 @@ Une application Express.js pour l'authentification avec Google OAuth2 et persist
 sequenceDiagram
     participant Browser as Navigateur
     participant App as Node.js App
+    participant DB as Base de Données
     participant Google as Google OAuth
     participant GoogleAPI as Google API
 
@@ -26,6 +27,8 @@ sequenceDiagram
     App->>App: Efface state de session
     alt State invalide
         App->>Browser: Redirect /login?error=invalid_state
+    else Code manquant
+        App->>Browser: Redirect /login?error=missing_code
     else State valide
         App->>Google: POST /oauth2.googleapis.com/token<br/>code, client_id, client_secret, grant_type=authorization_code
         Google->>App: access_token
@@ -33,11 +36,20 @@ sequenceDiagram
         App->>GoogleAPI: GET /oauth2/v1/userinfo<br/>Authorization: Bearer access_token
         GoogleAPI->>App: profile {id, email, name, picture}
 
-        Note over App: Ignore DB - session seulement
+        App->>DB: findOne({email: profile.email})
+        alt Utilisateur existe
+            DB->>App: existing user
+            App->>DB: update name, picture, googleId
+            DB->>App: user mis à jour
+        else Nouvel utilisateur
+            App->>DB: create({googleId, email, name, picture})
+            DB->>App: created user
+        end
+
         App->>App: Met à jour session.user<br/>{id, email, name, picture}
         App->>Browser: Redirect /
     end
-
+    Note over App,DB: Gestion erreurs DB/ Axios vers /login?error
 ```
 
 ## Structure du projet
