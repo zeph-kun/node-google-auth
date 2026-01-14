@@ -28,9 +28,12 @@ app.use('/', authRoutes);
 // Home page
 app.get('/', (req, res) => {
   if (req.session.user) {
+    // Log user object for debugging image issues
+    console.log('Session user:', req.session.user);
+    const pic = req.session.user.picture || '';
     res.send(`
       <h1>Welcome ${req.session.user.name}!</h1>
-      <img src="${req.session.user.picture}" alt="profile" style="width: 100px; border-radius: 50%;">
+      <img src="${pic}" alt="profile" style="width: 100px; border-radius: 50%;">
       <p>Email: ${req.session.user.email}</p>
       <a href="/logout">Logout</a>
     `);

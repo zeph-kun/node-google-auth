@@ -1,6 +1,7 @@
 const axios = require('axios');
 const crypto = require('crypto');
 const { CLIENT_ID, SECRET_ID, REDIRECT_URI } = require('../config/env');
+const User = require('../models/User');
 
 // Generate Google OAuth URL with state parameter
 const generateGoogleAuthUrl = (req) => {
@@ -47,16 +48,47 @@ const handleGoogleCallback = async (req, res) => {
       headers: { Authorization: `Bearer ${access_token}` },
     });
 
-    // Store user in session
-    req.session.user = {
-      id: profile.id,
-      email: profile.email,
-      name: profile.name,
-      picture: profile.picture,
-    };
-
-    console.log('User authenticated:', profile.email);
-    res.redirect('/');
+    // Upsert user in database (create if not exists)
+    try {
+      console.log('🔍 Searching for user with email:', profile.email);
+      const existing = await User.findOne({ email: profile.email });
+      
+      if (existing) {
+        // Update fields if necessary
+        console.log('✏️ User exists, updating...');
+        existing.name = profile.name || existing.name;
+        existing.picture = profile.picture || existing.picture;
+        existing.googleId = profile.id || existing.googleId;
+        await existing.save();
+        req.session.user = {
+          id: existing._id,
+          email: existing.email,
+          name: existing.name,
+          picture: existing.picture,
+        };
+        console.log('✅ Existing user signed in:', existing.email);
+      } else {
+        console.log('➕ Creating new user...');
+        const created = await User.create({
+          googleId: profile.id,
+          email: profile.email,
+          name: profile.name,
+          picture: profile.picture,
+        });
+        req.session.user = {
+          id: created._id,
+          email: created.email,
+          name: created.name,
+          picture: created.picture,
+        };
+        console.log('✅ New user created:', created.email);
+      }
+      return res.redirect('/');
+    } catch (dbErr) {
+      console.error('❌ DB error:', dbErr.message || dbErr);
+      console.error('Full DB error:', dbErr);
+      return res.status(500).redirect('/login?error=db_error: ' + encodeURIComponent(dbErr.message));
+    }
   } catch (error) {
     console.error('Axios error:', error.toJSON ? error.toJSON() : error);
 
