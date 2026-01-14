@@ -1,6 +1,8 @@
-# Google Auth - OAuth2 Application avec MongoDB
+# Google Auth - OAuth2 Application avec MongoDB et Tailwind CSS
 
-Une application Express.js pour l'authentification avec Google OAuth2 et persistance utilisateur dans MongoDB.
+Une application Express.js pour l'authentification avec Google OAuth2, persistance utilisateur dans MongoDB.
+
+## Flux d'authentification
 
 ```mermaid
 sequenceDiagram
@@ -60,19 +62,25 @@ sequenceDiagram
 │   ├── config/
 │   │   ├── env.js              # Configuration et variables d'environnement
 │   │   └── db.js               # Connexion MongoDB
+│   ├── controllers/
+│   │   ├── authController.js   # Logique OAuth2 et upsert utilisateur
+│   │   └── homeController.js   # Pages publiques (home, login)
+│   ├── middleware/
+│   │   └── auth.js             # Protection des routes
 │   ├── models/
 │   │   └── User.js             # Schéma MongoDB User
-│   ├── controllers/
-│   │   └── authController.js   # Logique métier de l'authentification
-│   ├── middleware/
-│   │   └── auth.js             # Middleware d'authentification
 │   ├── routes/
-│   │   └── authRoutes.js       # Routes d'authentification
-│   └── app.js                  # Configuration Express
+│   │   ├── authRoutes.js       # Routes d'authentification
+│   │   └── homeRoutes.js       # Routes publiques
+│   ├── views/
+│   │   ├── home.ejs            # Page d'accueil
+│   │   ├── login.ejs           # Page de connexion
+│   │   └── profile.ejs         # Profil utilisateur (JSON)
+│   └── app.js                  # Configuration Express + EJS
 ├── server.js                   # Point d'entrée du serveur
 ├── package.json
 ├── .env                        # Variables d'environnement (à créer)
-├── .env.example                # Exemple de variables d'environnement
+├── .env.example                # Exemple de variables
 ├── .gitignore                  # Fichiers à ignorer
 └── README.md                   # Ce fichier
 ```
@@ -81,6 +89,7 @@ sequenceDiagram
 
 - Node.js 14+
 - MongoDB (local ou cloud via MongoDB Atlas)
+- npm ou yarn
 
 ## Installation
 
@@ -138,11 +147,6 @@ npm run dev
 
 Le serveur démarre sur `http://localhost:3000`
 
-Les logs indiquent :
-- `✅ MongoDB connected successfully` - Connexion BD réussie
-- `✅ New user created` - Nouvel utilisateur créé
-- `✅ Existing user signed in` - Utilisateur existant connecté
-
 ## Routes
 
 ### Public
@@ -188,45 +192,27 @@ Logique métier :
 
 Endpoints OAuth2 et routes protégées appliquant les middlewares.
 
-## Flux d'authentification
-
-1. Utilisateur clique sur "Login with Google"
-2. État CSRF généré et stocké en session
-3. Redirection vers Google
-4. Google retourne un code d'autorisation
-5. Échange du code contre un token d'accès
-6. Récupération du profil utilisateur
-7. **Upsert dans MongoDB** :
-   - Si utilisateur existe → mise à jour des champs
-   - Sinon → création d'un nouvel utilisateur
-8. Stockage du profil en session
-9. Redirection vers la page d'accueil
-
 ## Sécurité
 
 ✅ **Protection CSRF** avec le paramètre `state`
 ✅ **Cookies HttpOnly** et SameSite pour les sessions
 ✅ **Validation des paramètres** à chaque étape
-✅ **Gestion sécurisée des sessions** (25h d'expiration)
+✅ **Gestion sécurisée des sessions** (24h d'expiration)
 ✅ **Upsert utilisateur** pour éviter les doublons
 ✅ **.gitignore** configuré pour `.env` et `node_modules`
-
-## Scripts
-
-```bash
-npm run dev        # Démarrer le serveur avec nodemon (rechargement auto)
-npm start          # Démarrer le serveur en production
-npm install        # Installer les dépendances
-```
 
 ## Technologies utilisées
 
 - **Express.js** - Framework web
+- **EJS** - Moteur de template
 - **Mongoose** - ODM MongoDB
 - **express-session** - Gestion des sessions
+- **Tailwind CSS** - Framework CSS utility-first
+- **PostCSS** - Processeur CSS
 - **axios** - Requêtes HTTP
 - **dotenv** - Variables d'environnement
 - **nodemon** - Rechargement automatique (dev)
+- **concurrently** - Exécution de commandes en parallèle
 
 ## Troubleshooting
 
@@ -241,3 +227,11 @@ Les CORS ne sont pas configurées (simple app). À ajouter si nécessaire.
 
 ### Images de profil ne se chargent pas
 L'application affiche l'URL de l'image en page d'accueil. Vérifier que Google OAuth retourne bien `picture`.
+
+## Troubleshooting
+
+### Error: db_error
+Vérifier que MongoDB est en cours d'exécution :
+```bash
+brew services start mongodb-community
+```
