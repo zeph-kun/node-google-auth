@@ -207,12 +207,9 @@ Endpoints OAuth2 et routes protégées appliquant les middlewares.
 - **EJS** - Moteur de template
 - **Mongoose** - ODM MongoDB
 - **express-session** - Gestion des sessions
-- **Tailwind CSS** - Framework CSS utility-first
-- **PostCSS** - Processeur CSS
 - **axios** - Requêtes HTTP
 - **dotenv** - Variables d'environnement
 - **nodemon** - Rechargement automatique (dev)
-- **concurrently** - Exécution de commandes en parallèle
 
 ## Troubleshooting
 
